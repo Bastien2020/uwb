@@ -69,6 +69,66 @@ def readSerialLines(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
             print("stopping reading loop")
             return
 
+def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
+    if (serialPort.inWaiting() > 0):
+        serialBytes = serialPort.readline()  ##check stoppgin criteria for readline (specific character ? Probably a blocking method check characters end.
+        strg = serialBytes.decode("Ascii")
+        print(strg)
+        if strg[0:5] == "+DIST":
+            s = strg.split(",")
+            tstp = datetime.now().timestamp()
+            distance = str(tstp)+" ,+DIST ,"+s[1]+" ,"+s[2]
+            msg.anchorId = s[1]
+            msg.range = int(s[2])
+            print(strg)
+            pub_distance.publish(msg)
+
+
+            # to do replace internal timestamp with tag timestamp (probably more accurate if delay in transmission from the tag, but correspondance between local and tag tiemstamp has to be assessed
+            # need to implement a fiunction localtimestampe_From_TagTimestamp
+
+            #tstp = datetime.now().timestamp()
+            # timestamp(datetime.now()) # could be replaced by datetime.now().timestamp() ?
+
+            ## interpret string, and queue only "interesting" data depending on "queueLogEvent" condition
+            # log into file
+            #logging.info("timestamp: " + str(tstp) + ": " + strg)
+
+            #for cdt in queueLogEvent:  ## one of                                       if cdt == "+MPOS":  # the obly implemented rigth now
+                #if strg[
+                   #0:5] == "+MPOS":  ## in that case, we interpret the string according to uwb device spec to queue an objet [timestamp, posX, posY]
+                    #s = strg.split(",")
+                    # for the moment string are logged
+                    #position = str(tstp)+",+MPOS ,"+ s[1] +" ,"+ s[2]
+                    #myQueue.put(position)
+                    #msg.data = position
+                    #pub_position.publish(msg)
+                    #print('position : ', msg.data)
+                    #print(type(msg.data))
+
+             #if strg[0:5] == "+DIST":  ## in that case, we interpret the string according to uwb device spec to queue an objet [timestamp, posX, posY]
+                #s = strg.split(",")
+                # for the moment string are logged
+                #distance = str(tstp)+" ,+DIST ,"+s[1]+" ,"+s[2]
+                #myQueue.put(distance)
+                #msg.anchorId = strg[14:22]
+                #msg.anchorId = s[1]
+                #msg.range = int(s[2])
+                #print(strg[24:27])
+                #print(strg[23:28])
+                #print(strg[22:29])
+                #print(strg)
+                #msg.range = int(strg[23:26])
+                #print (anchorId)
+                #print(range)
+                #print(strg)
+                #pub_distance.publish(msg)
+        if evt.is_set():
+            print("stopping reading loop")
+            return
+
+
+
 
 def readSerialLinesCommand(serialPort, myQueue, evt):
     while (True):
@@ -134,8 +194,15 @@ class UWBconnect:
 
 
 # Connexion to the UWB Tag
-UWB = UWBconnect('/dev/ttyACM1')
+print("test")
+UWB = UWBconnect('/dev/ttyACM0')
+rate = rospy.Rate(20)
+while not rospy.is_shutdown():
+    readSerialLines2(UWB.serialPort, UWB.queue, UWB.stpReading)
+    rate.sleep()
+rospy.loginfo("Node was stopped")
 
+#UWB.setReadingThread()
     # read queue event and run a Kalman filter
 	# def locateRobot:
     # pass
