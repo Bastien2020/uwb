@@ -12,7 +12,7 @@ import logging  # for logging all data in a file
 
 # initialisation of the node and the publishers
 rospy.init_node('UWB_publisher')
-pub_position = rospy.Publisher("/Position", String, queue_size=10)
+pub_imu = rospy.Publisher("/imu_uwb", String, queue_size=10)
 pub_distance = rospy.Publisher("/Distance", Uwb, queue_size=10)
 #msg=String()
 msg = Uwb()
@@ -65,15 +65,33 @@ def readSerialLines(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
                 #print(range)
                 print(strg)
                 pub_distance.publish(msg)
+
+            if strg[0:5] == "+MACC":  ## in that case, we interpret the string according to uwb device spec to queue an objet [timestamp, posX, posY]
+                s = strg.split(",")
+                # for the moment string are logged
+                acceleration = str(tstp) + " ,+MACC ," + s[1] + " ," + s[2] + " ," + s[3]
+            myQueue.put(acceleration)
+            # msg.anchorId = strg[14:22]
+            msg.anchorId = s[1]
+            msg.range = int(s[2])
+            # print(strg[24:27])
+            # print(strg[23:28])
+            # print(strg[22:29])
+            # print(strg)
+            # msg.range = int(strg[23:26])
+            # print (anchorId)
+            # print(range)
+            print(strg)
+            pub_distance.publish(msg)
         if evt.is_set():
             print("stopping reading loop")
             return
 
-def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
+def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", "+MACC", "+MGYRO", "+MGVT", "+MQUAT", "+MHRP"]):
     if (serialPort.inWaiting() > 0):
         serialBytes = serialPort.readline()  ##check stoppgin criteria for readline (specific character ? Probably a blocking method check characters end.
         strg = serialBytes.decode("Ascii")
-        print(strg)
+        #print(strg)
         if strg[0:5] == "+DIST":
             s = strg.split(",")
             tstp = datetime.now().timestamp()
@@ -83,6 +101,40 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"])
             print(strg)
             pub_distance.publish(msg)
 
+        if strg[0:5] == "+MACC":
+            s = strg.split(",")
+            tstp = datetime.now().timestamp()
+            linear_acceleration = str(tstp)+" ,+MACC ,"+s[1] + " ," +s[2]+ " ," +s[3][:-2]
+            print(strg)
+            pub_imu.publish(linear_acceleration)
+
+        if strg[0:6] == "+MGYRO":
+            s = strg.split(",")
+            tstp = datetime.now().timestamp()
+            angular_velocity = str(tstp) + " ,+MGYRO ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
+            print(strg)
+            pub_imu.publish(angular_velocity)
+
+        if strg[0:6] == "+MGVT":
+            s = strg.split(",")
+            tstp = datetime.now().timestamp()
+            tag_gravity = str(tstp) + " ,+MGYRO ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
+            print(strg)
+            pub_imu.publish(tag_gravity)
+
+        if strg[0:6] == "+MQUAT":
+            s = strg.split(",")
+            tstp = datetime.now().timestamp()
+            tag_orientation = str(tstp) + " ,+MQUAT ," + s[1] + " ," + s[2] + " ," + s[3] + " ," + s[4][:-2]
+            print(strg)
+            pub_imu.publish(tag_orientation)
+
+        if strg[0:5] == "+MHRP":
+            s = strg.split(",")
+            tstp = datetime.now().timestamp()
+            tag_orientation = str(tstp) + " ,+MHRP ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
+            print(strg)
+            pub_imu.publish(tag_orientation)
 
             # to do replace internal timestamp with tag timestamp (probably more accurate if delay in transmission from the tag, but correspondance between local and tag tiemstamp has to be assessed
             # need to implement a fiunction localtimestampe_From_TagTimestamp
