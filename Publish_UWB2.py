@@ -124,7 +124,7 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", 
             tstp = datetime.now().timestamp()
             angular_velocity = str(tstp) + " ,+MGYRO ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
             print(strg)
-	        msg2.X_acceleration = s[1]
+            msg2.X_acceleration = s[1]
 	        msg2.Y_acceleration = s[2]
 	        msg2.Z_acceleration = s[3]
             pub_imu_angular_acc.publish(msg2)
