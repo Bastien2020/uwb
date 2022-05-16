@@ -115,7 +115,7 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", 
             Linear_acceleration = str(tstp)+" ,+MACC ,"+s[1] + " ," +s[2]+ " ," +s[3][:-2]
             msg1.X_acceleration = s[1]
             msg1.Y_acceleration = s[2]
-	        msg1.Z_acceleration = s[3]
+	    msg1.Z_acceleration = s[3]
             print(strg)
             pub_imu_linear_acc.publish(msg1)
 
@@ -125,8 +125,8 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", 
             angular_velocity = str(tstp) + " ,+MGYRO ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
             print(strg)
             msg2.X_acceleration = s[1]
-	        msg2.Y_acceleration = s[2]
-	        msg2.Z_acceleration = s[3]
+	    msg2.Y_acceleration = s[2]
+	    msg2.Z_acceleration = s[3]
             pub_imu_angular_acc.publish(msg2)
 
         if strg[0:6] == "+MGVT":
@@ -148,9 +148,9 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", 
             tstp = datetime.now().timestamp()
             tag_orientation = str(tstp) + " ,+MHRP ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
             print(strg)
-	        msg3.yaw = s[1]
-	        msg3.pitch = s[2]
-	        msg3.roll = s[3]
+	    msg3.yaw = s[1]
+	    msg3.pitch = s[2]
+	    msg3.roll = s[3]
             pub_imu_euler_angles.publish(msg3)
 
             # to do replace internal timestamp with tag timestamp (probably more accurate if delay in transmission from the tag, but correspondance between local and tag tiemstamp has to be assessed
