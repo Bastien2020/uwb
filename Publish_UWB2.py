@@ -1,7 +1,7 @@
 import rospy
 #from tork_rpc_util.msg import StringList
 from std_msgs.msg import String
-from custom_msgs.msg import Uwb
+from custom_msgs.msg import Uwb, Linear_acceleration, Angular_acceleration, Euler_angles
 import serial
 import threading
 from datetime import datetime
@@ -12,10 +12,15 @@ import logging  # for logging all data in a file
 
 # initialisation of the node and the publishers
 rospy.init_node('UWB_publisher')
-pub_imu = rospy.Publisher("/imu_uwb", String, queue_size=10)
+pub_imu_linear_acc = rospy.Publisher("/imu_uwb_linear_acc", Linear_acceleration, queue_size=10)
+pub_imu_angular_acc = rospy.Publisher("/imu_uwb_angular_acc", Angular_acceleration, queue_size=10)
+pub_imu_euler_angles = rospy.Publisher("/imu_uwb_euler_angles", Euler_angles, queue_size=10)
 pub_distance = rospy.Publisher("/Distance", Uwb, queue_size=10)
 #msg=String()
 msg = Uwb()
+msg1 = Linear_acceleration()
+msg2 = Angular_acceleration()
+msg3 = Angular_acceleration()
 
 
 def readSerialLines(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
@@ -72,7 +77,9 @@ def readSerialLines(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
                 acceleration = str(tstp) + " ,+MACC ," + s[1] + " ," + s[2] + " ," + s[3]
             myQueue.put(acceleration)
             # msg.anchorId = strg[14:22]
-            msg.anchorId = s[1]
+            msg.X_acceleration = s[1]
+	    msg.Y_acceleration = s[2]
+	    msg.Z_acceleration = s[3]
             msg.range = int(s[2])
             # print(strg[24:27])
             # print(strg[23:28])
@@ -82,7 +89,7 @@ def readSerialLines(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST"]):
             # print (anchorId)
             # print(range)
             print(strg)
-            pub_distance.publish(msg)
+            pub_imu.publish(msg)
         if evt.is_set():
             print("stopping reading loop")
             return
@@ -104,16 +111,22 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", 
         if strg[0:5] == "+MACC":
             s = strg.split(",")
             tstp = datetime.now().timestamp()
-            linear_acceleration = str(tstp)+" ,+MACC ,"+s[1] + " ," +s[2]+ " ," +s[3][:-2]
+            Linear_acceleration = str(tstp)+" ,+MACC ,"+s[1] + " ," +s[2]+ " ," +s[3][:-2]
+	    msg1.X_acceleration = s[1]
+	    msg1.Y_acceleration = s[2]
+	    msg1.Z_acceleration = s[3]
             print(strg)
-            pub_imu.publish(linear_acceleration)
+            pub_imu_linear_acc.publish(msg1)
 
         if strg[0:6] == "+MGYRO":
             s = strg.split(",")
             tstp = datetime.now().timestamp()
             angular_velocity = str(tstp) + " ,+MGYRO ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
             print(strg)
-            pub_imu.publish(angular_velocity)
+	    msg2.X_acceleration = s[1]
+	    msg2.Y_acceleration = s[2]
+	    msg2.Z_acceleration = s[3]
+            pub_imu_angular_acc.publish(msg2)
 
         if strg[0:6] == "+MGVT":
             s = strg.split(",")
@@ -134,7 +147,10 @@ def readSerialLines2(serialPort, myQueue, evt, queueLogEvent=["+MPOS", "+DIST", 
             tstp = datetime.now().timestamp()
             tag_orientation = str(tstp) + " ,+MHRP ," + s[1] + " ," + s[2] + " ," + s[3][:-2]
             print(strg)
-            pub_imu.publish(tag_orientation)
+	    msg3.yaw = s[1]
+	    msg3.pitch = s[2]
+	    msg3.roll = s[3]
+            pub_imu_euler_angles.publish(msg3)
 
             # to do replace internal timestamp with tag timestamp (probably more accurate if delay in transmission from the tag, but correspondance between local and tag tiemstamp has to be assessed
             # need to implement a fiunction localtimestampe_From_TagTimestamp
